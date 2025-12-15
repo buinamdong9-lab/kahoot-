@@ -1,0 +1,54 @@
+{
+  "sessionId": "448161-1765782127412",
+  "roomCode": "448161",
+  "title": "Quiz demo",
+  "createdAt": 1765782127412,
+  "startedAt": 1765782141582,
+  "endedAt": 1765782150867,
+  "players": [
+    {
+      "id": "7igF_H7-DT0Vk_lEAAAH",
+      "name": "Đông",
+      "score": 0
+    }
+  ],
+  "events": [
+    {
+      "t": 1765782127412,
+      "type": "room_created"
+    },
+    {
+      "t": 1765782138483,
+      "type": "player_join",
+      "playerId": "7igF_H7-DT0Vk_lEAAAH",
+      "name": "Đông"
+    },
+    {
+      "t": 1765782141582,
+      "type": "started"
+    },
+    {
+      "t": 1765782147957,
+      "type": "question",
+      "qIndex": 0,
+      "qId": "q1"
+    },
+    {
+      "t": 1765782149507,
+      "type": "question",
+      "qIndex": 1,
+      "qId": "q2"
+    },
+    {
+      "t": 1765782150867,
+      "type": "ended",
+      "leaderboard": [
+        {
+          "id": "7igF_H7-DT0Vk_lEAAAH",
+          "name": "Đông",
+          "score": 0
+        }
+      ]
+    }
+  ]
+}

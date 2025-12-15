@@ -3,60 +3,182 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Host - Kahoot mini</title>
+  <title>HOST · Physics Kahoot</title>
   <style>
-    body{font-family:system-ui;margin:24px;max-width:900px}
-    .card{border:1px solid #ddd;border-radius:14px;padding:14px;margin:12px 0}
-    button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+    :root{
+      --bg0:#060913; --bg1:#0b1430; --card:rgba(255,255,255,.06);
+      --stroke:rgba(255,255,255,.12); --text:#eaf1ff; --muted:#9fb0d0;
+      --accent:#66e3ff; --accent2:#8b7bff; --ok:#31c48d; --bad:#ff5a5f;
+      --shadow:0 20px 60px rgba(0,0,0,.45); --r:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui; color:var(--text);
+      background:
+        radial-gradient(900px 500px at 10% 10%, rgba(102,227,255,.18), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(139,123,255,.18), transparent 60%),
+        linear-gradient(180deg,var(--bg0),var(--bg1));
+    }
+    body::before{
+      content:""; position:fixed; inset:0; pointer-events:none; opacity:.7;
+      background:
+        linear-gradient(to right, rgba(255,255,255,.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.045) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(closest-side at 50% 20%, rgba(0,0,0,.9), transparent 70%);
+    }
+    .app{width:min(1200px,100%); margin:26px auto; padding:0 16px 40px}
+    .header{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{
+      width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:900;
+      background:linear-gradient(135deg, rgba(102,227,255,.25), rgba(139,123,255,.25));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 0 0 6px rgba(102,227,255,.05), 0 0 40px rgba(102,227,255,.12);
+    }
+    .title h1{margin:0;font-size:22px}
+    .title .sub{margin-top:6px;color:var(--muted);font-size:13px}
+    .hud{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{
+      padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:13px;
+      backdrop-filter: blur(10px);
+    }
+    .pill b{color:var(--text)}
+    .grid{display:grid;grid-template-columns: 420px 1fr;gap:12px}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+    .panel{padding:14px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    code{background:#f2f2f2;padding:2px 6px;border-radius:8px}
-    table{width:100%;border-collapse:collapse}
-    td,th{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    button{
+      padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(135deg, rgba(102,227,255,.22), rgba(139,123,255,.22));
+      color:var(--text);cursor:pointer;font-weight:800;
+      transition:transform .12s ease, filter .12s ease;
+    }
+    button:hover{transform:translateY(-1px);filter:brightness(1.06)}
+    button.secondary{background:rgba(255,255,255,.06)}
+    button.danger{background:rgba(255,90,95,.18);border-color:rgba(255,90,95,.35)}
+    button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    input{
+      padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.18);color:var(--text);
+      width:min(520px,100%);
+    }
+    .muted{color:var(--muted)}
+    .bigPin{
+      font-size:38px;letter-spacing:3px;font-weight:900;margin:6px 0 0
+    }
+    .tag{
+      font-size:12px;border:1px solid rgba(102,227,255,.25);background:rgba(102,227,255,.08);
+      color:rgba(102,227,255,.9);padding:5px 10px;border-radius:999px
+    }
+    .qbox{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.16);
+      border-radius:14px;padding:12px;margin-top:10px;
+    }
+    .opt{
+      padding:10px 12px;border-radius:12px;margin:8px 0;
+      border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);
+    }
+    .opt.ok{border-color:rgba(49,196,141,.35);background:rgba(49,196,141,.10)}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.10);text-align:left}
+    code{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);padding:2px 6px;border-radius:8px}
   </style>
 </head>
 <body>
-  <h1>HOST (Giống Kahoot)</h1>
-
-  <div class="card">
-    <div class="row">
-      <button id="create">Tạo phòng (PIN)</button>
-      <button id="start" disabled>Bắt đầu</button>
-      <button id="next" disabled>Câu tiếp</button>
-      <button id="reveal" disabled>Hiện đáp án</button>
-      <button id="end" disabled>Kết thúc</button>
+  <div class="app">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">λ</div>
+        <div class="title">
+          <h1>HOST · Physics Kahoot</h1>
+          <div class="sub">Tạo phòng → phát câu → reveal → leaderboard realtime</div>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="pill">PIN: <b id="pinHud">—</b></div>
+        <div class="pill">Người chơi: <b id="pcount">0</b></div>
+        <div class="pill">Trạng thái: <b id="status">chưa tạo phòng</b></div>
+      </div>
     </div>
-    <p>PIN: <b id="pin">—</b></p>
-    <p>Trạng thái: <span id="status">chưa tạo phòng</span></p>
-  </div>
 
-  <div class="card">
-    <b>Người chơi</b>
-    <p id="count">0 người</p>
-    <table>
-      <thead><tr><th>#</th><th>Tên</th><th>Điểm</th></tr></thead>
-      <tbody id="lb"></tbody>
-    </table>
-  </div>
+    <div class="grid">
+      <!-- LEFT: controls + room -->
+      <div class="card panel">
+        <div class="row">
+          <button id="create">Tạo phòng</button>
+          <button class="secondary" id="start" disabled>Bắt đầu</button>
+          <button class="secondary" id="next" disabled>Câu tiếp</button>
+          <button class="secondary" id="reveal" disabled>Hiện đáp án</button>
+          <button class="danger" id="end" disabled>Kết thúc</button>
+        </div>
 
-  <div class="card">
-    <b>Câu hiện tại</b>
-    <p id="q">—</p>
-    <ol id="opts"></ol>
+        <div class="qbox" style="margin-top:12px">
+          <div class="row" style="justify-content:space-between">
+            <div>
+              <div class="muted">Room PIN</div>
+              <div class="bigPin" id="pin">—</div>
+              <div class="muted">Share link Player: <code id="playerLink">—</code></div>
+            </div>
+            <div class="row">
+              <button class="secondary" id="copyLink" disabled>Copy link</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="qbox">
+          <div class="row" style="justify-content:space-between">
+            <b>Leaderboard</b>
+            <span class="tag">E = hν · Δt</span>
+          </div>
+          <table>
+            <thead><tr><th>#</th><th>Tên</th><th>Điểm</th></tr></thead>
+            <tbody id="lb"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: current question -->
+      <div class="card panel">
+        <div class="row" style="justify-content:space-between">
+          <b>Câu hiện tại</b>
+          <span class="tag" id="qmeta">—</span>
+        </div>
+
+        <div class="qbox">
+          <div class="muted" id="qtitle">Chưa phát câu.</div>
+          <div id="opts"></div>
+        </div>
+
+        <div class="muted" style="margin-top:10px">
+          Tip: Người chơi vào <code>/player.html</code>, nhập PIN + tên để join.
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+   const token = localStorage.getItem("token");
+if (!token) location.href = "/login.html";
+const socket = io({ auth: { token } });
+
 
     let roomCode = null;
-    let currentQuestion = null;
+    let current = null;
+
+    const pinHud = document.getElementById("pinHud");
+    const pcount = document.getElementById("pcount");
+    const statusEl = document.getElementById("status");
 
     const pinEl = document.getElementById("pin");
-    const statusEl = document.getElementById("status");
-    const countEl = document.getElementById("count");
-    const lbEl = document.getElementById("lb");
-    const qEl = document.getElementById("q");
-    const optsEl = document.getElementById("opts");
+    const qmeta = document.getElementById("qmeta");
+    const qtitle = document.getElementById("qtitle");
+    const opts = document.getElementById("opts");
+    const lb = document.getElementById("lb");
 
     const btnCreate = document.getElementById("create");
     const btnStart  = document.getElementById("start");
@@ -64,70 +186,108 @@
     const btnReveal = document.getElementById("reveal");
     const btnEnd    = document.getElementById("end");
 
+    const playerLinkEl = document.getElementById("playerLink");
+    const btnCopyLink = document.getElementById("copyLink");
+
+    function setStatus(t){ statusEl.textContent = t; }
+    function renderLB(list){
+      lb.innerHTML = "";
+      (list || []).forEach((p,i)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${p.score}</td>`;
+        lb.appendChild(tr);
+      });
+    }
+    function renderQuestion(payload){
+      if (!payload) return;
+      current = payload;
+      qmeta.textContent = `Câu ${payload.index}/${payload.total}`;
+      qtitle.textContent = payload.question.text;
+      opts.innerHTML = "";
+      payload.question.options.forEach((o,i)=>{
+        const div = document.createElement("div");
+        div.className = "opt";
+        div.textContent = `#${i+1}: ${o}`;
+        opts.appendChild(div);
+      });
+    }
+    function highlightCorrect(correctIndex){
+      [...opts.children].forEach((div,i)=>{
+        div.classList.toggle("ok", i === correctIndex);
+      });
+    }
+
     btnCreate.onclick = () => socket.emit("host:createRoom");
     btnStart.onclick  = () => socket.emit("host:start", { roomCode });
     btnNext.onclick   = () => socket.emit("host:next", { roomCode });
     btnReveal.onclick = () => socket.emit("host:reveal", { roomCode });
     btnEnd.onclick    = () => socket.emit("host:end", { roomCode });
 
+    btnCopyLink.onclick = async () => {
+      if (!roomCode) return;
+      const url = `${location.origin}/player.html`;
+      await navigator.clipboard.writeText(url);
+      setStatus("đã copy link player");
+      setTimeout(()=> setStatus("đang chờ / điều khiển"), 900);
+    };
+
     socket.on("room:created", (data) => {
       roomCode = data.roomCode;
+
+      pinHud.textContent = roomCode;
       pinEl.textContent = roomCode;
-      statusEl.textContent = `đã tạo phòng (Quiz: ${data.title})`;
+
+      const url = `${location.origin}/player.html`;
+      playerLinkEl.textContent = url;
+
       btnStart.disabled = false;
       btnEnd.disabled = false;
+      btnCopyLink.disabled = false;
+
+      setStatus("đã tạo phòng");
+      qmeta.textContent = "—";
+      qtitle.textContent = "Bấm “Bắt đầu” rồi “Câu tiếp” để phát câu 1.";
+      opts.innerHTML = "";
+      renderLB([]);
     });
 
     socket.on("game:started", () => {
-      statusEl.textContent = "đã bắt đầu — bấm “Câu tiếp” để phát câu 1";
+      setStatus("đã bắt đầu");
       btnNext.disabled = false;
       btnReveal.disabled = false;
-    });
-
-    socket.on("game:question", (data) => {
-      currentQuestion = data.question;
-      qEl.textContent = `Câu ${data.index}/${data.total}: ${data.question.text}`;
-      optsEl.innerHTML = "";
-      data.question.options.forEach((o, i) => {
-        const li = document.createElement("li");
-        li.textContent = o;
-        optsEl.appendChild(li);
-      });
-      statusEl.textContent = "đang hỏi";
-    });
-
-    socket.on("game:reveal", ({ correctIndex, leaderboard }) => {
-      statusEl.textContent = `đã hiện đáp án (đúng: #${correctIndex+1})`;
-      // highlight options
-      [...optsEl.children].forEach((li, i) => {
-        li.style.fontWeight = (i === correctIndex) ? "800" : "400";
-        li.style.color = (i === correctIndex) ? "green" : "";
-      });
-      renderLB(leaderboard);
+      qtitle.textContent = "Bấm “Câu tiếp” để phát câu.";
     });
 
     socket.on("room:players", ({ count, list }) => {
-      countEl.textContent = count + " người";
+      pcount.textContent = count;
       renderLB(list);
     });
 
-    socket.on("game:ended", ({ leaderboard }) => {
-      statusEl.textContent = "đã kết thúc";
+    socket.on("game:question", (payload) => {
+      setStatus("đang hỏi");
+      renderQuestion(payload);
+    });
+
+    socket.on("game:reveal", ({ correctIndex, leaderboard }) => {
+      setStatus(`reveal đáp án (#${correctIndex+1})`);
+      highlightCorrect(correctIndex);
       renderLB(leaderboard);
+    });
+
+    socket.on("game:ended", ({ leaderboard }) => {
+      setStatus("đã kết thúc");
       btnStart.disabled = true;
       btnNext.disabled = true;
       btnReveal.disabled = true;
       btnEnd.disabled = true;
+      renderLB(leaderboard);
+      qmeta.textContent = "—";
+      qtitle.textContent = "Game kết thúc.";
+      opts.innerHTML = "";
     });
+    socket.on("host:error", (msg) => alert(msg));
+socket.on("connect_error", (err) => console.log("connect_error:", err.message));
 
-    function renderLB(list) {
-      lbEl.innerHTML = "";
-      (list || []).forEach((p, idx) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${idx+1}</td><td>${p.name}</td><td>${p.score}</td>`;
-        lbEl.appendChild(tr);
-      });
-    }
   </script>
 </body>
 </html>

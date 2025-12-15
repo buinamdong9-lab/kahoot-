@@ -1,0 +1,87 @@
+{
+  "sessionId": "374148-1765781668212",
+  "roomCode": "374148",
+  "title": "Quiz demo",
+  "createdAt": 1765781668212,
+  "startedAt": 1765781670926,
+  "endedAt": 1765781811885,
+  "players": [
+    {
+      "id": "1_GpmwPf_PMFBaPBAAAD",
+      "name": "Đông",
+      "score": 2
+    }
+  ],
+  "events": [
+    {
+      "t": 1765781668212,
+      "type": "room_created"
+    },
+    {
+      "t": 1765781670926,
+      "type": "started"
+    },
+    {
+      "t": 1765781672762,
+      "type": "question",
+      "qIndex": 0,
+      "qId": "q1"
+    },
+    {
+      "t": 1765781707272,
+      "type": "player_join",
+      "playerId": "1_GpmwPf_PMFBaPBAAAD",
+      "name": "Đông"
+    },
+    {
+      "t": 1765781780820,
+      "type": "reveal",
+      "qIndex": 0
+    },
+    {
+      "t": 1765781784588,
+      "type": "answer",
+      "playerId": "1_GpmwPf_PMFBaPBAAAD",
+      "name": "Đông",
+      "qIndex": 0,
+      "choice": 0,
+      "correct": true
+    },
+    {
+      "t": 1765781788998,
+      "type": "reveal",
+      "qIndex": 0
+    },
+    {
+      "t": 1765781796168,
+      "type": "question",
+      "qIndex": 1,
+      "qId": "q2"
+    },
+    {
+      "t": 1765781804098,
+      "type": "answer",
+      "playerId": "1_GpmwPf_PMFBaPBAAAD",
+      "name": "Đông",
+      "qIndex": 1,
+      "choice": 0,
+      "correct": true
+    },
+    {
+      "t": 1765781808654,
+      "type": "reveal",
+      "qIndex": 1
+    },
+    {
+      "t": 1765781811885,
+      "type": "ended",
+      "leaderboard": [
+        {
+          "id": "1_GpmwPf_PMFBaPBAAAD",
+          "name": "Đông",
+          "score": 2
+        }
+      ]
+    }
+  ]
+}

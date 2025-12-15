@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Sessions</title>
+  <style>
+    body{font-family:system-ui;margin:0;background:#070b16;color:#eaf1ff}
+    .app{max-width:1200px;margin:24px auto;padding:0 16px}
+    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    input{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#eaf1ff}
+    button{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#eaf1ff;cursor:pointer}
+    button.primary{background:linear-gradient(135deg, rgba(102,227,255,.22), rgba(139,123,255,.22))}
+    .grid{display:grid;grid-template-columns: 380px 1fr;gap:12px}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+
+    .card{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);backdrop-filter:blur(10px)}
+    .panel{padding:12px}
+    .muted{color:#9fb0d0}
+    .list{max-height:70vh;overflow:auto}
+    .item{padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18);margin:10px 0;cursor:pointer}
+    .item:hover{border-color:rgba(102,227,255,.25)}
+    .item.active{border-color:rgba(102,227,255,.45);background:rgba(102,227,255,.08)}
+    .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+    .tag{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#9fb0d0}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.10);text-align:left}
+    code{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);padding:2px 6px;border-radius:8px}
+    details{border:1px solid rgba(255,255,255,.10);border-radius:12px;background:rgba(0,0,0,.15);padding:10px;margin-top:10px}
+    summary{cursor:pointer;font-weight:700}
+    .ok{color:#31c48d;font-weight:700}
+    .bad{color:#ff5a5f;font-weight:700}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .mono{font-family:ui-monospace,Consolas,monospace}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Admin Sessions</h1>
+    <div class="top">
+      <input id="key" placeholder="ADMIN_KEY" />
+      <button class="primary" id="loadList">Tải danh sách sessions</button>
+      <button id="refreshDetail" disabled>Làm mới chi tiết</button>
+      <span class="muted" id="msg"></span>
+    </div>
+
+    <div class="grid">
+      <div class="card panel">
+        <div class="row">
+          <b>Danh sách sessions</b>
+          <span class="tag" id="count">0</span>
+        </div>
+        <div class="muted" style="margin-top:6px">
+          Click 1 session để xem leaderboard + log trả lời.
+        </div>
+        <div class="list" id="list"></div>
+      </div>
+
+      <div class="card panel">
+        <div class="row">
+          <b>Chi tiết</b>
+          <span class="tag mono" id="sid">—</span>
+        </div>
+
+        <div id="detailEmpty" class="muted" style="margin-top:10px">
+          Chưa chọn session nào.
+        </div>
+
+        <div id="detail" hidden>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <div class="muted">Quiz</div>
+              <div id="title"></div>
+            </div>
+            <div>
+              <div class="muted">Phòng</div>
+              <div class="mono" id="room"></div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <div class="tag" id="createdAt">created</div>
+            <div class="tag" id="startedAt">started</div>
+            <div class="tag" id="endedAt">ended</div>
+          </div>
+
+          <h3 style="margin:14px 0 6px">Leaderboard</h3>
+          <table>
+            <thead><tr><th>#</th><th>Tên</th><th>Điểm</th></tr></thead>
+            <tbody id="lb"></tbody>
+          </table>
+
+          <div class="btns">
+            <button id="downloadJson">Tải JSON</button>
+            <button id="downloadCsv">Tải CSV (leaderboard)</button>
+          </div>
+
+          <details>
+            <summary>Log trả lời theo từng câu</summary>
+            <div id="qlog" style="margin-top:10px"></div>
+          </details>
+
+          <details>
+            <summary>Events thô (raw)</summary>
+            <pre id="raw" class="mono" style="white-space:pre-wrap;margin-top:10px"></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const keyEl = document.getElementById("key");
+    const msgEl = document.getElementById("msg");
+    const listEl = document.getElementById("list");
+    const countEl = document.getElementById("count");
+
+    const sidEl = document.getElementById("sid");
+    const detailEmpty = document.getElementById("detailEmpty");
+    const detail = document.getElementById("detail");
+
+    const titleEl = document.getElementById("title");
+    const roomEl = document.getElementById("room");
+    const createdAtEl = document.getElementById("createdAt");
+    const startedAtEl = document.getElementById("startedAt");
+    const endedAtEl = document.getElementById("endedAt");
+    const lbEl = document.getElementById("lb");
+    const qlogEl = document.getElementById("qlog");
+    const rawEl = document.getElementById("raw");
+
+    const btnLoadList = document.getElementById("loadList");
+    const btnRefreshDetail = document.getElementById("refreshDetail");
+    const btnJson = document.getElementById("downloadJson");
+    const btnCsv = document.getElementById("downloadCsv");
+
+    let sessions = [];
+    let activeId = null;
+    let activeSession = null;
+
+    function fmtTime(ms) {
+      if (!ms) return "—";
+      try { return new Date(ms).toLocaleString(); } catch { return String(ms); }
+    }
+
+    async function api(url) {
+      const res = await fetch(url, { headers: { "x-admin-key": keyEl.value } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+      return data;
+    }
+
+    function setMsg(t, isErr=false) {
+      msgEl.textContent = t || "";
+      msgEl.style.color = isErr ? "#ff5a5f" : "#9fb0d0";
+    }
+
+    function renderList() {
+      listEl.innerHTML = "";
+      countEl.textContent = sessions.length;
+
+      sessions.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "item" + (s.sessionId === activeId ? " active" : "");
+        div.innerHTML = `
+          <div class="row">
+            <b class="mono">${s.roomCode || "—"}</b>
+            <span class="tag">${s.playerCount} người</span>
+          </div>
+          <div style="margin-top:6px">${s.title || "—"}</div>
+          <div class="muted" style="margin-top:6px">
+            ${fmtTime(s.createdAt)}
+          </div>
+          <div class="muted mono" style="margin-top:6px">${s.sessionId}</div>
+        `;
+        div.onclick = () => loadDetail(s.sessionId);
+        listEl.appendChild(div);
+      });
+    }
+
+    function renderDetail(s) {
+      activeSession = s;
+      sidEl.textContent = s.sessionId || "—";
+      detailEmpty.hidden = true;
+      detail.hidden = false;
+
+      titleEl.textContent = s.title || "—";
+      roomEl.textContent = s.roomCode || "—";
+      createdAtEl.textContent = "Created: " + fmtTime(s.createdAt);
+      startedAtEl.textContent = "Started: " + fmtTime(s.startedAt);
+      endedAtEl.textContent = "Ended: " + fmtTime(s.endedAt);
+
+      // leaderboard
+      const players = (s.players || []).slice().sort((a,b) => b.score - a.score || a.name.localeCompare(b.name));
+      lbEl.innerHTML = "";
+      players.forEach((p, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${p.score}</td>`;
+        lbEl.appendChild(tr);
+      });
+
+      // log theo câu (dựa vào events)
+      const ev = s.events || [];
+      const qEvents = ev.filter(x => x.type === "question");
+      const aEvents = ev.filter(x => x.type === "answer");
+      const rEvents = ev.filter(x => x.type === "reveal");
+
+      // map qIndex -> { qId, answers: [] }
+      const byQ = new Map();
+      qEvents.forEach(qe => {
+        byQ.set(qe.qIndex, { qIndex: qe.qIndex, qId: qe.qId, answers: [] });
+      });
+      aEvents.forEach(ae => {
+        if (!byQ.has(ae.qIndex)) byQ.set(ae.qIndex, { qIndex: ae.qIndex, qId: "?", answers: [] });
+        byQ.get(ae.qIndex).answers.push(ae);
+      });
+
+      qlogEl.innerHTML = "";
+      const qIndices = Array.from(byQ.keys()).sort((a,b) => a-b);
+
+      if (qIndices.length === 0) {
+        qlogEl.innerHTML = `<div class="muted">Session này chưa có log câu hỏi/answer (có thể host chưa bấm Next hoặc game kết thúc sớm).</div>`;
+      } else {
+        qIndices.forEach(qi => {
+          const g = byQ.get(qi);
+          const rev = rEvents.find(x => x.qIndex === qi);
+          const box = document.createElement("div");
+          box.style.marginTop = "10px";
+          box.innerHTML = `
+            <div class="row">
+              <b>Câu #${qi+1}</b>
+              <span class="tag mono">qId: ${g.qId}</span>
+            </div>
+            <div class="muted" style="margin-top:6px">${rev ? "Đã reveal" : "Chưa reveal"}</div>
+          `;
+
+          const tbl = document.createElement("table");
+          tbl.innerHTML = `<thead><tr><th>Người chơi</th><th>Chọn</th><th>Đúng/Sai</th><th>Time</th></tr></thead><tbody></tbody>`;
+          const tb = tbl.querySelector("tbody");
+
+          const answers = (g.answers || []).slice().sort((a,b) => a.t - b.t);
+          if (answers.length === 0) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td colspan="4" class="muted">Không có ai trả lời câu này.</td>`;
+            tb.appendChild(tr);
+          } else {
+            answers.forEach(a => {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${a.name || a.playerId}</td>
+                <td>#${Number(a.choice)+1}</td>
+                <td class="${a.correct ? "ok" : "bad"}">${a.correct ? "Đúng" : "Sai"}</td>
+                <td class="muted">${fmtTime(a.t)}</td>
+              `;
+              tb.appendChild(tr);
+            });
+          }
+          box.appendChild(tbl);
+          qlogEl.appendChild(box);
+        });
+      }
+
+      rawEl.textContent = JSON.stringify(s, null, 2);
+      btnRefreshDetail.disabled = false;
+    }
+
+    async function loadList() {
+      try {
+        setMsg("Đang tải danh sách…");
+        sessions = await api("/api/admin/sessions");
+        setMsg("Đã tải danh sách sessions.");
+        renderList();
+      } catch (e) {
+        setMsg("Lỗi: " + e.message, true);
+      }
+    }
+
+    async function loadDetail(id) {
+      try {
+        activeId = id;
+        renderList();
+        setMsg("Đang tải chi tiết…");
+        const s = await api("/api/admin/sessions/" + encodeURIComponent(id));
+        setMsg("Đã tải chi tiết session.");
+        renderDetail(s);
+      } catch (e) {
+        setMsg("Lỗi: " + e.message, true);
+      }
+    }
+
+    btnLoadList.onclick = loadList;
+    btnRefreshDetail.onclick = () => activeId && loadDetail(activeId);
+
+    btnJson.onclick = () => {
+      if (!activeSession) return;
+      const blob = new Blob([JSON.stringify(activeSession, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `session-${activeSession.sessionId}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    btnCsv.onclick = () => {
+      if (!activeSession) return;
+      const players = (activeSession.players || []).slice().sort((a,b) => b.score - a.score);
+      const lines = [["rank","name","score"]];
+      players.forEach((p,i) => lines.push([String(i+1), p.name, String(p.score)]));
+      const csv = lines.map(r => r.map(x => `"${String(x).replaceAll('"','""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `leaderboard-${activeSession.sessionId}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  </script>
+</body>
+</html>

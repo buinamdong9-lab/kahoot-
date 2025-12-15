@@ -1,0 +1,36 @@
+{
+  "sessionId": "645492-1765782159314",
+  "roomCode": "645492",
+  "title": "Quiz demo",
+  "createdAt": 1765782159314,
+  "startedAt": 1765782160473,
+  "endedAt": 1765782162536,
+  "players": [],
+  "events": [
+    {
+      "t": 1765782159314,
+      "type": "room_created"
+    },
+    {
+      "t": 1765782160473,
+      "type": "started"
+    },
+    {
+      "t": 1765782161332,
+      "type": "question",
+      "qIndex": 0,
+      "qId": "q1"
+    },
+    {
+      "t": 1765782161797,
+      "type": "question",
+      "qIndex": 1,
+      "qId": "q2"
+    },
+    {
+      "t": 1765782162536,
+      "type": "ended",
+      "leaderboard": []
+    }
+  ]
+}
