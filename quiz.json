@@ -1,0 +1,27 @@
+{
+  "title": "Quiz demo",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "HTML dùng để làm gì?",
+      "options": [
+        "Cấu trúc",
+        "Trang trí",
+        "Chạy server",
+        "Vẽ 3D"
+      ],
+      "correctIndex": 0
+    },
+    {
+      "id": "q2",
+      "text": "CSS dùng để…",
+      "options": [
+        "Trang trí",
+        "Chạy OS",
+        "Nén file",
+        "Tạo DB"
+      ],
+      "correctIndex": 0
+    }
+  ]
+}

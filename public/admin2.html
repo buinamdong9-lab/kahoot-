@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Quiz (Form)</title>
+  <style>
+    body{font-family:system-ui;margin:24px;max-width:980px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    input, textarea, select{padding:8px;border-radius:10px;border:1px solid #ccc}
+    input[type="text"]{width:min(520px,100%)}
+    textarea{width:100%;min-height:80px}
+    button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+    .card{border:1px solid #ddd;border-radius:14px;padding:14px;margin:14px 0}
+    .muted{color:#666;font-size:14px}
+    .qhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .opts{display:grid;gap:8px;margin-top:10px}
+    .optline{display:flex;gap:10px;align-items:center}
+    .optline input[type="text"]{flex:1}
+    .danger{background:#ff5a5f;color:white}
+    .primary{background:#2b62ff;color:white}
+    .secondary{background:#eee}
+    .ok{color:green;font-weight:600}
+    .bad{color:#b00020;font-weight:600}
+    code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <h1>Admin Quiz (Form)</h1>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <div class="muted">Admin Key (giống biến <code>ADMIN_KEY</code> bạn set lúc chạy server)</div>
+        <input id="key" type="text" placeholder="Nhập ADMIN_KEY" />
+      </div>
+      <div style="flex:1"></div>
+      <button class="secondary" id="loadBtn">Tải quiz</button>
+      <button class="primary" id="saveBtn">Lưu quiz</button>
+    </div>
+    <p id="msg" class="muted"></p>
+  </div>
+
+  <div class="card">
+    <div class="muted">Tiêu đề quiz</div>
+    <input id="title" type="text" placeholder="VD: Quiz kiến thức web" />
+    <div class="row" style="margin-top:10px">
+      <button class="secondary" id="addQ">+ Thêm câu hỏi</button>
+    </div>
+  </div>
+
+  <div id="questions"></div>
+
+  <script>
+    const keyEl = document.getElementById("key");
+    const titleEl = document.getElementById("title");
+    const msgEl = document.getElementById("msg");
+    const listEl = document.getElementById("questions");
+
+    let model = { title: "", questions: [] };
+
+    function uid() {
+      return "q" + Math.random().toString(16).slice(2) + Date.now().toString(16);
+    }
+
+    function render() {
+      titleEl.value = model.title || "";
+      listEl.innerHTML = "";
+
+      model.questions.forEach((q, idx) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="qhead">
+            <div style="flex:1">
+              <div class="muted">Câu hỏi #${idx+1} (id: <code>${q.id}</code>)</div>
+              <textarea data-k="text" placeholder="Nhập nội dung câu hỏi..."></textarea>
+            </div>
+            <button class="danger" data-action="del">Xóa</button>
+          </div>
+
+          <div class="opts"></div>
+
+          <div class="row" style="margin-top:10px">
+            <span class="muted">Đáp án đúng:</span>
+            <select data-k="correctIndex"></select>
+          </div>
+
+          <p class="muted">Tip: Mỗi câu nên có 2-6 lựa chọn.</p>
+        `;
+
+        const textTa = card.querySelector('textarea[data-k="text"]');
+        textTa.value = q.text || "";
+
+        const optsDiv = card.querySelector(".opts");
+        q.options.forEach((opt, optIdx) => {
+          const line = document.createElement("div");
+          line.className = "optline";
+          line.innerHTML = `
+            <span class="muted">#${optIdx+1}</span>
+            <input type="text" value="${escapeHtml(opt)}" />
+            <button class="secondary" data-action="delOpt">Xóa</button>
+          `;
+          // input change
+          line.querySelector('input').addEventListener("input", (e) => {
+            model.questions[idx].options[optIdx] = e.target.value;
+            // refresh correct dropdown labels only
+            fillCorrectSelect(card, model.questions[idx]);
+          });
+          // delete opt
+          line.querySelector('button[data-action="delOpt"]').onclick = () => {
+            model.questions[idx].options.splice(optIdx, 1);
+            // fix correctIndex
+            if (model.questions[idx].correctIndex >= model.questions[idx].options.length) {
+              model.questions[idx].correctIndex = Math.max(0, model.questions[idx].options.length - 1);
+            }
+            render();
+          };
+          optsDiv.appendChild(line);
+        });
+
+        // add option button
+        const addOpt = document.createElement("button");
+        addOpt.className = "secondary";
+        addOpt.textContent = "+ Thêm lựa chọn";
+        addOpt.onclick = () => {
+          model.questions[idx].options.push("Lựa chọn mới");
+          fillCorrectSelect(card, model.questions[idx]);
+          render();
+        };
+        optsDiv.appendChild(addOpt);
+
+        // correct select
+        const sel = card.querySelector('select[data-k="correctIndex"]');
+        fillCorrectSelect(card, q);
+        sel.value = String(q.correctIndex ?? 0);
+        sel.onchange = () => {
+          model.questions[idx].correctIndex = Number(sel.value);
+        };
+
+        // question text change
+        textTa.addEventListener("input", (e) => {
+          model.questions[idx].text = e.target.value;
+        });
+
+        // delete question
+        card.querySelector('button[data-action="del"]').onclick = () => {
+          model.questions.splice(idx, 1);
+          render();
+        };
+
+        listEl.appendChild(card);
+      });
+    }
+
+    function fillCorrectSelect(card, q) {
+      const sel = card.querySelector('select[data-k="correctIndex"]');
+      if (!sel) return;
+      sel.innerHTML = "";
+      q.options.forEach((opt, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        o.textContent = `#${i+1}: ${opt}`;
+        sel.appendChild(o);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function validate() {
+      if (!titleEl.value.trim()) return "Thiếu tiêu đề quiz.";
+      for (const q of model.questions) {
+        if (!q.text?.trim()) return "Có câu hỏi bị trống nội dung.";
+        if (!Array.isArray(q.options) || q.options.length < 2) return "Mỗi câu cần ít nhất 2 lựa chọn.";
+        if (q.options.some(x => !String(x).trim())) return "Có lựa chọn bị trống.";
+        if (typeof q.correctIndex !== "number" || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+          return "Đáp án đúng không hợp lệ.";
+        }
+      }
+      return null;
+    }
+
+    async function load() {
+      msgEl.textContent = "";
+      const res = await fetch("/api/admin/quiz", {
+        headers: { "x-admin-key": keyEl.value }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        msgEl.className = "bad";
+        msgEl.textContent = data.error || "Lỗi tải quiz";
+        return;
+      }
+      model = data;
+      msgEl.className = "ok";
+      msgEl.textContent = "Đã tải quiz.";
+      render();
+    }
+
+    async function save() {
+      model.title = titleEl.value.trim();
+
+      const err = validate();
+      if (err) {
+        msgEl.className = "bad";
+        msgEl.textContent = err;
+        return;
+      }
+
+      const res = await fetch("/api/admin/quiz", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": keyEl.value
+        },
+        body: JSON.stringify(model)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        msgEl.className = "bad";
+        msgEl.textContent = data.error || "Lỗi lưu quiz";
+        return;
+      }
+      msgEl.className = "ok";
+      msgEl.textContent = "Đã lưu quiz thành công.";
+    }
+
+    document.getElementById("addQ").onclick = () => {
+      model.questions.push({
+        id: uid(),
+        text: "",
+        options: ["Lựa chọn 1", "Lựa chọn 2", "Lựa chọn 3", "Lựa chọn 4"],
+        correctIndex: 0
+      });
+      render();
+    };
+
+    document.getElementById("loadBtn").onclick = load;
+    document.getElementById("saveBtn").onclick = save;
+
+    // init UI
+    model = { title: "Quiz demo", questions: [] };
+    render();
+  </script>
+</body>
+</html>

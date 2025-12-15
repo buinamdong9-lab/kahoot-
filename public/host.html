@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Host</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="app">
+    <h1>Host / Giám thị</h1>
+
+    <div class="card panel">
+      <div class="row">
+        <div class="pill" id="quizTitle">Quiz: ...</div>
+        <div class="pill" id="qCount">Số câu: ...</div>
+        <button class="secondary" id="reload">Tải lại</button>
+      </div>
+      <p class="muted" id="info"></p>
+    </div>
+
+    <div class="card panel" style="margin-top:12px">
+      <p class="muted">Link người chơi:</p>
+      <div class="row">
+        <input id="link" readonly style="width:min(640px,100%)">
+        <button id="copy">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { apiGetQuiz } from "/assets/app.js";
+
+    const quizTitle = document.getElementById("quizTitle");
+    const qCount = document.getElementById("qCount");
+    const info = document.getElementById("info");
+    const link = document.getElementById("link");
+    link.value = location.origin + "/";
+
+    async function load() {
+      info.textContent = "Đang tải…";
+      const quiz = await apiGetQuiz();
+      quizTitle.textContent = "Quiz: " + (quiz.title || "N/A");
+      qCount.textContent = "Số câu: " + (quiz.questions?.length || 0);
+      info.textContent = "Host dùng để kiểm tra bộ câu hỏi trước khi gửi link cho người chơi.";
+    }
+    document.getElementById("reload").onclick = load;
+    document.getElementById("copy").onclick = async () => {
+      await navigator.clipboard.writeText(link.value);
+      info.textContent = "Đã copy link người chơi.";
+    };
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Quiz (JSON)</title>
+  <style>
+    body{font-family:system-ui;margin:24px;max-width:1000px}
+    textarea{width:100%;height:420px;font-family:Consolas,monospace}
+    button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+    input{padding:8px;width:320px;border-radius:10px;border:1px solid #ccc}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <h1>Admin Quiz (Sửa bằng JSON)</h1>
+
+  <div class="row">
+    <div>
+      <div class="muted">Nhập ADMIN_KEY (giống key bạn set khi chạy server):</div>
+      <input id="key" placeholder="ADMIN_KEY" />
+    </div>
+    <button id="load">Tải quiz</button>
+    <button id="save">Lưu quiz</button>
+  </div>
+
+  <p id="msg" class="muted"></p>
+  <textarea id="json" placeholder="Bấm 'Tải quiz' để lấy dữ liệu..."></textarea>
+
+  <script>
+    const keyEl = document.getElementById("key");
+    const jsonEl = document.getElementById("json");
+    const msgEl = document.getElementById("msg");
+
+    async function load() {
+      msgEl.textContent = "";
+      const res = await fetch("/api/admin/quiz", {
+        headers: { "x-admin-key": keyEl.value }
+      });
+      const data = await res.json();
+      if (!res.ok) { msgEl.textContent = data.error || "Lỗi tải"; return; }
+      jsonEl.value = JSON.stringify(data, null, 2);
+      msgEl.textContent = "Đã tải quiz.";
+    }
+
+    async function save() {
+      msgEl.textContent = "";
+      let payload;
+      try { payload = JSON.parse(jsonEl.value); }
+      catch { msgEl.textContent = "JSON lỗi (sai dấu , hoặc ngoặc)."; return; }
+
+      const res = await fetch("/api/admin/quiz", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": keyEl.value
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) { msgEl.textContent = data.error || "Lỗi lưu"; return; }
+      msgEl.textContent = "Đã lưu quiz.";
+    }
+
+    document.getElementById("load").onclick = load;
+    document.getElementById("save").onclick = save;
+  </script>
+</body>
+</html>

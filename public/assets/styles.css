@@ -1,0 +1,23 @@
+:root{
+  --bg0:#060913; --bg1:#0b1430; --card:rgba(255,255,255,.06);
+  --stroke:rgba(255,255,255,.12); --text:#eaf1ff; --muted:#9fb0d0;
+  --accent:#66e3ff; --accent2:#8b7bff; --shadow:0 20px 60px rgba(0,0,0,.45);
+  --r:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui;color:var(--text);
+  background:radial-gradient(900px 500px at 10% 10%, rgba(102,227,255,.18), transparent 60%),
+            radial-gradient(900px 500px at 90% 0%, rgba(139,123,255,.18), transparent 60%),
+            linear-gradient(180deg,var(--bg0),var(--bg1));
+}
+.app{width:min(980px,100%); margin:28px auto; padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+.panel{padding:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:13px}
+button{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);cursor:pointer;font-weight:700;color:var(--text);
+  background:linear-gradient(135deg, rgba(102,227,255,.22), rgba(139,123,255,.22));
+}
+button.secondary{background:rgba(255,255,255,.06)}
+input, textarea{padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.18);color:var(--text)}
+.muted{color:var(--muted)}

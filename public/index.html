@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Physics Quiz</title>
+  <style>
+    :root{
+      --bg0:#060913;
+      --bg1:#0b1430;
+      --card:rgba(255,255,255,.06);
+      --stroke:rgba(255,255,255,.12);
+      --text:#eaf1ff;
+      --muted:#9fb0d0;
+      --accent:#66e3ff;
+      --accent2:#8b7bff;
+      --ok:#31c48d;
+      --bad:#ff5a5f;
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --r:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:system-ui,Segoe UI,Roboto,Arial;
+      color:var(--text);
+      background:
+        radial-gradient(900px 500px at 10% 10%, rgba(102,227,255,.18), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(139,123,255,.18), transparent 60%),
+        linear-gradient(180deg,var(--bg0),var(--bg1));
+      overflow-x:hidden;
+    }
+    /* Lưới “tọa độ” */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background:
+        linear-gradient(to right, rgba(255,255,255,.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.045) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(closest-side at 50% 20%, rgba(0,0,0,.9), transparent 70%);
+      pointer-events:none;
+      opacity:.7;
+    }
+    /* Hạt sáng nhẹ */
+    body::after{
+      content:"";
+      position:fixed; inset:-200px;
+      background: radial-gradient(circle, rgba(255,255,255,.10) 0 2px, transparent 3px);
+      background-size: 120px 120px;
+      opacity:.25;
+      transform: rotate(12deg);
+      pointer-events:none;
+      animation: drift 18s linear infinite;
+    }
+    @keyframes drift{
+      from{transform:translate3d(0,0,0) rotate(12deg)}
+      to{transform:translate3d(-120px,120px,0) rotate(12deg)}
+    }
+
+    .app{width:min(980px,100%); margin:28px auto; padding:0 16px 40px}
+    .header{
+      display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .brand{
+      display:flex; gap:12px; align-items:center;
+    }
+    .logo{
+      width:44px; height:44px; border-radius:14px;
+      background: linear-gradient(135deg, rgba(102,227,255,.25), rgba(139,123,255,.25));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: 0 0 0 6px rgba(102,227,255,.05), 0 0 40px rgba(102,227,255,.12);
+      display:grid; place-items:center;
+      font-weight:900;
+    }
+    .title{
+      line-height:1.1;
+    }
+    .title h1{margin:0; font-size:22px; letter-spacing:.2px}
+    .title .sub{color:var(--muted); font-size:13px; margin-top:6px}
+    .hud{
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .pill{
+      padding:8px 12px; border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--muted);
+      font-size:13px;
+      backdrop-filter: blur(10px);
+    }
+    .pill b{color:var(--text)}
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .panel{
+      padding:16px;
+    }
+
+    .q{
+      padding:14px;
+      margin:12px 0;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.12);
+    }
+    .qhead{
+      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:baseline;
+      margin-bottom:10px;
+    }
+    .qhead b{font-size:16px}
+    .tag{
+      color:rgba(102,227,255,.9);
+      font-size:12px;
+      border:1px solid rgba(102,227,255,.25);
+      background:rgba(102,227,255,.08);
+      padding:5px 10px; border-radius:999px;
+    }
+
+    .opt{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:10px 12px;
+      margin:8px 0;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      cursor:pointer;
+    }
+    .opt:hover{
+      transform: translateY(-1px);
+      border-color: rgba(102,227,255,.25);
+      background: rgba(102,227,255,.06);
+    }
+    .opt input{margin-top:3px; accent-color: var(--accent);}
+
+    .controls{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;
+      align-items:center;
+    }
+    button{
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(135deg, rgba(102,227,255,.22), rgba(139,123,255,.22));
+      color:var(--text);
+      cursor:pointer;
+      font-weight:700;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      transition: transform .12s ease, filter .12s ease;
+    }
+    button:hover{transform:translateY(-1px); filter:brightness(1.05)}
+    button.secondary{
+      background:rgba(255,255,255,.06);
+    }
+
+    .result{
+      margin-top:12px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18);
+      color:var(--muted);
+    }
+    .result b{color:var(--text)}
+    .ok{color:var(--ok)}
+    .bad{color:var(--bad)}
+
+    .footerNote{
+      margin-top:14px; color:rgba(159,176,208,.8); font-size:12px;
+    }
+    .footerNote code{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      padding:2px 6px; border-radius:8px;
+      color:rgba(234,241,255,.9);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">λ</div>
+        <div class="title">
+          <h1 id="title">Physics Quiz</h1>
+          <div class="sub">Giao diện kiểu “lab” — chỉ server mới chấm điểm</div>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="pill" id="progress">Câu <b>0</b>/<b>0</b></div>
+        <div class="pill" id="scoreLive">Điểm: <b>0</b></div>
+      </div>
+    </div>
+
+    <div class="card panel">
+      <div id="wrap"></div>
+
+      <div class="controls">
+        <button id="submit">Nộp bài</button>
+        <button class="secondary" id="reload">Tải lại câu hỏi</button>
+      </div>
+
+      <div class="result" id="result">Chọn đáp án rồi bấm <b>Nộp bài</b>.</div>
+      <div class="footerNote">
+        Tip: nếu mở file bằng <code>file:///</code> sẽ không gọi được API. Hãy dùng <code>http://localhost:3000</code>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const wrap = document.getElementById("wrap");
+    const titleEl = document.getElementById("title");
+    const resultEl = document.getElementById("result");
+    const progressEl = document.getElementById("progress");
+    const scoreLiveEl = document.getElementById("scoreLive");
+
+    let questions = [];
+
+    function setHUD(score = 0) {
+      progressEl.innerHTML = `Câu <b>${questions.length ? 1 : 0}</b>/<b>${questions.length}</b>`;
+      scoreLiveEl.innerHTML = `Điểm: <b>${score}</b>`;
+    }
+
+    async function loadQuiz() {
+      resultEl.textContent = "Đang tải câu hỏi…";
+      const res = await fetch("/api/quiz");
+      const quiz = await res.json();
+
+      titleEl.textContent = quiz.title || "Physics Quiz";
+      questions = quiz.questions || [];
+
+      wrap.innerHTML = "";
+      questions.forEach((q, idx) => {
+        const box = document.createElement("div");
+        box.className = "q";
+        box.innerHTML = `
+          <div class="qhead">
+            <b>${q.text}</b>
+            <span class="tag">φ · Δt · E = hν</span>
+          </div>
+          <div class="opts"></div>
+        `;
+
+        const opts = box.querySelector(".opts");
+        q.options.forEach((opt, j) => {
+          const label = document.createElement("label");
+          label.className = "opt";
+          label.innerHTML = `
+            <input type="radio" name="${q.id}" value="${j}">
+            <div>${opt}</div>
+          `;
+          opts.appendChild(label);
+        });
+
+        wrap.appendChild(box);
+      });
+
+      setHUD(0);
+      resultEl.innerHTML = "Chọn đáp án rồi bấm <b>Nộp bài</b>.";
+    }
+
+    document.getElementById("submit").onclick = async () => {
+      const answers = {};
+      for (const q of questions) {
+        const picked = document.querySelector(`input[name="${q.id}"]:checked`);
+        if (picked) answers[q.id] = Number(picked.value);
+      }
+
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers })
+      });
+
+      const data = await res.json();
+      setHUD(data.score);
+
+      if (data.score === data.total) {
+        resultEl.innerHTML = `<span class="ok">✅ Bạn đúng ${data.score}/${data.total} câu.</span>`;
+      } else {
+        resultEl.innerHTML = `<span class="bad">❌ Bạn đúng ${data.score}/${data.total} câu.</span>`;
+      }
+    };
+
+    document.getElementById("reload").onclick = loadQuiz;
+
+    loadQuiz();
+  </script>
+</body>
+</html>
