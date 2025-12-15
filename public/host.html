@@ -1,56 +1,133 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Host</title>
-  <link rel="stylesheet" href="/assets/styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Host - Kahoot mini</title>
+  <style>
+    body{font-family:system-ui;margin:24px;max-width:900px}
+    .card{border:1px solid #ddd;border-radius:14px;padding:14px;margin:12px 0}
+    button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    code{background:#f2f2f2;padding:2px 6px;border-radius:8px}
+    table{width:100%;border-collapse:collapse}
+    td,th{padding:8px;border-bottom:1px solid #eee;text-align:left}
+  </style>
 </head>
 <body>
-  <div class="app">
-    <h1>Host / Giám thị</h1>
+  <h1>HOST (Giống Kahoot)</h1>
 
-    <div class="card panel">
-      <div class="row">
-        <div class="pill" id="quizTitle">Quiz: ...</div>
-        <div class="pill" id="qCount">Số câu: ...</div>
-        <button class="secondary" id="reload">Tải lại</button>
-      </div>
-      <p class="muted" id="info"></p>
+  <div class="card">
+    <div class="row">
+      <button id="create">Tạo phòng (PIN)</button>
+      <button id="start" disabled>Bắt đầu</button>
+      <button id="next" disabled>Câu tiếp</button>
+      <button id="reveal" disabled>Hiện đáp án</button>
+      <button id="end" disabled>Kết thúc</button>
     </div>
-
-    <div class="card panel" style="margin-top:12px">
-      <p class="muted">Link người chơi:</p>
-      <div class="row">
-        <input id="link" readonly style="width:min(640px,100%)">
-        <button id="copy">Copy</button>
-      </div>
-    </div>
+    <p>PIN: <b id="pin">—</b></p>
+    <p>Trạng thái: <span id="status">chưa tạo phòng</span></p>
   </div>
 
-  <script type="module">
-    import { apiGetQuiz } from "/assets/app.js";
+  <div class="card">
+    <b>Người chơi</b>
+    <p id="count">0 người</p>
+    <table>
+      <thead><tr><th>#</th><th>Tên</th><th>Điểm</th></tr></thead>
+      <tbody id="lb"></tbody>
+    </table>
+  </div>
 
-    const quizTitle = document.getElementById("quizTitle");
-    const qCount = document.getElementById("qCount");
-    const info = document.getElementById("info");
-    const link = document.getElementById("link");
-    link.value = location.origin + "/";
+  <div class="card">
+    <b>Câu hiện tại</b>
+    <p id="q">—</p>
+    <ol id="opts"></ol>
+  </div>
 
-    async function load() {
-      info.textContent = "Đang tải…";
-      const quiz = await apiGetQuiz();
-      quizTitle.textContent = "Quiz: " + (quiz.title || "N/A");
-      qCount.textContent = "Số câu: " + (quiz.questions?.length || 0);
-      info.textContent = "Host dùng để kiểm tra bộ câu hỏi trước khi gửi link cho người chơi.";
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    let roomCode = null;
+    let currentQuestion = null;
+
+    const pinEl = document.getElementById("pin");
+    const statusEl = document.getElementById("status");
+    const countEl = document.getElementById("count");
+    const lbEl = document.getElementById("lb");
+    const qEl = document.getElementById("q");
+    const optsEl = document.getElementById("opts");
+
+    const btnCreate = document.getElementById("create");
+    const btnStart  = document.getElementById("start");
+    const btnNext   = document.getElementById("next");
+    const btnReveal = document.getElementById("reveal");
+    const btnEnd    = document.getElementById("end");
+
+    btnCreate.onclick = () => socket.emit("host:createRoom");
+    btnStart.onclick  = () => socket.emit("host:start", { roomCode });
+    btnNext.onclick   = () => socket.emit("host:next", { roomCode });
+    btnReveal.onclick = () => socket.emit("host:reveal", { roomCode });
+    btnEnd.onclick    = () => socket.emit("host:end", { roomCode });
+
+    socket.on("room:created", (data) => {
+      roomCode = data.roomCode;
+      pinEl.textContent = roomCode;
+      statusEl.textContent = `đã tạo phòng (Quiz: ${data.title})`;
+      btnStart.disabled = false;
+      btnEnd.disabled = false;
+    });
+
+    socket.on("game:started", () => {
+      statusEl.textContent = "đã bắt đầu — bấm “Câu tiếp” để phát câu 1";
+      btnNext.disabled = false;
+      btnReveal.disabled = false;
+    });
+
+    socket.on("game:question", (data) => {
+      currentQuestion = data.question;
+      qEl.textContent = `Câu ${data.index}/${data.total}: ${data.question.text}`;
+      optsEl.innerHTML = "";
+      data.question.options.forEach((o, i) => {
+        const li = document.createElement("li");
+        li.textContent = o;
+        optsEl.appendChild(li);
+      });
+      statusEl.textContent = "đang hỏi";
+    });
+
+    socket.on("game:reveal", ({ correctIndex, leaderboard }) => {
+      statusEl.textContent = `đã hiện đáp án (đúng: #${correctIndex+1})`;
+      // highlight options
+      [...optsEl.children].forEach((li, i) => {
+        li.style.fontWeight = (i === correctIndex) ? "800" : "400";
+        li.style.color = (i === correctIndex) ? "green" : "";
+      });
+      renderLB(leaderboard);
+    });
+
+    socket.on("room:players", ({ count, list }) => {
+      countEl.textContent = count + " người";
+      renderLB(list);
+    });
+
+    socket.on("game:ended", ({ leaderboard }) => {
+      statusEl.textContent = "đã kết thúc";
+      renderLB(leaderboard);
+      btnStart.disabled = true;
+      btnNext.disabled = true;
+      btnReveal.disabled = true;
+      btnEnd.disabled = true;
+    });
+
+    function renderLB(list) {
+      lbEl.innerHTML = "";
+      (list || []).forEach((p, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${idx+1}</td><td>${p.name}</td><td>${p.score}</td>`;
+        lbEl.appendChild(tr);
+      });
     }
-    document.getElementById("reload").onclick = load;
-    document.getElementById("copy").onclick = async () => {
-      await navigator.clipboard.writeText(link.value);
-      info.textContent = "Đã copy link người chơi.";
-    };
-
-    load();
   </script>
 </body>
 </html>
